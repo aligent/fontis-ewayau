@@ -131,6 +131,7 @@ class Fontis_EwayAu_Model_Shared extends Mage_Payment_Model_Method_Abstract
         }
         $paymentInfo = $this->getInfoInstance();
         $fieldsArr['ewayCustomerID'] = $this->getCustomerId();
+
         $fieldsArr['ewayTotalAmount'] = ($this->getOrder()->getBaseGrandTotal()*100);
         $fieldsArr['ewayCustomerFirstName'] = $billing->getFirstname();
         $fieldsArr['ewayCustomerLastName'] = $billing->getLastname();

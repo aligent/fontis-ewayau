@@ -37,6 +37,8 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
 
     protected $_formBlockType = 'ewayau/form';
     protected $_infoBlockType = 'ewayau/info';
+    
+    protected $_canRefundInvoicePartial     = true;
 
     /**
      * Get flag to use CCV or not
@@ -63,6 +65,14 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
             } else {
                 return 'https://www.eway.com.au/gateway/xmlpayment.asp';
             }
+        }
+    }
+    
+    public function getApiRefundUrl() {
+        if(Mage::getStoreConfig('payment/ewayau_direct/test_gateway')) {
+            return 'https://www.eway.com.au/gateway/xmltest/refund_test.asp';
+        } else {
+            return 'https://www.eway.com.au/gateway/xmlpaymentrefund.asp';
         }
     }
 
@@ -116,14 +126,16 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         if ($result === false) {
             $e = $this->getError();
             if (isset($e['message'])) {
-                $message = Mage::helper('ewayau')->__('There has been an error processing your payment. ') . $e['message'];
+                $message = Mage::helper('ewayau')->__('There has been an error processing your payment1. ') . $e['message'];
             } else {
                 $message = Mage::helper('ewayau')->__('There has been an error processing your payment. Please try later or contact us for help.');
             }
             Mage::throwException($message);
         } else {
             if ($result['ewayTrxnStatus'] === 'True') {
-                $payment->setStatus(self::STATUS_APPROVED)->setLastTransId($result['ewayTrxnNumber']);
+                $payment->setStatus(self::STATUS_APPROVED)
+                        ->setLastTransId($result['ewayTrxnNumber'])
+                        ->setTransactionId($result['ewayTrxnNumber']);
             }
             else {
                 Mage::throwException($result['ewayTrxnError']);
@@ -155,7 +167,9 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         }
         else {
             if ($result['ewayTrxnStatus'] === 'True' && $result['ewayReturnAmount'] == ($amount * 100)) {
-                $payment->setStatus(self::STATUS_APPROVED)->setLastTransId($result['ewayTrxnNumber']);
+                $payment->setStatus(self::STATUS_APPROVED)
+                        ->setLastTransId($result['ewayTrxnNumber'])
+                        ->setTransactionId($result['ewayTrxnNumber']);
             }
             else {
                 Mage::throwException($result['ewayTrxnError']);
@@ -199,7 +213,9 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         
         // Build the XML request
         $xml = new SimpleXMLElement('<ewaygateway></ewaygateway>');
- 
+ 		Mage::log('callDoDirectPayment', null, 'mylogfile.log');
+ 		Mage::log($this->getAmount(), null, 'mylogfile.log');
+ 		Mage::log((round($this->getAmount(), 2)*100), null, 'mylogfile.log');
         $xml->addChild('ewayCustomerID', $this->getCustomerId() );
         $xml->addChild('ewayTotalAmount', ($this->getAmount()*100) );
         $xml->addChild('ewayCardHoldersName', str_replace('&', '&amp;', $payment->getCcOwner() ) );
@@ -248,10 +264,10 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         $xml = new SimpleXMLElement('<ewaygateway></ewaygateway>');
 
         $xml->addChild('ewayCustomerID', $this->getCustomerId());
-        $xml->addChild('ewayTotalAmount', $this->getAmount()*100);
+        $xml->addChild('ewayTotalAmount', ($this->getAmount()*100) );
         $xml->addChild('ewayCardExpiryMonth', $payment->getCcExpMonth());
         $xml->addChild('ewayCardExpiryYear', substr($payment->getCcExpYear(), 2, 2));
-        $xml->addChild('ewayOriginalTrxnNumber', $payment->getLastTransId());
+        $xml->addChild('ewayOriginalTrxnNumber', $payment->getParentTransactionId());
         $xml->addChild('ewayRefundPassword', $this->getRefundPassword());
                
         $xml->addChild('ewayOption1', '');
@@ -262,7 +278,8 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         $config = array('timeout' => 30);
 
         $http->setConfig($config);
-        $http->write(Zend_Http_Client::POST, 'https://www.eway.com.au/gateway/xmlpaymentrefund.asp', '1.1', array(), $xml->asXML());
+        $http->write(Zend_Http_Client::POST, $this->getApiRefundUrl(), '1.1', array(), $xml->asXML());
+        
         $response = $http->read();
 
         $response = preg_split('/^\r?$/m', $response, 2);
