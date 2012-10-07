@@ -1,0 +1,6 @@
+app/code/community/Fontis/EwayAu/                              app/code/community/Fontis/EwayAu/
+app/design/adminhtml/default/default/template/fontis/ewayau/   app/design/adminhtml/default/default/template/fontis/ewayau/
+app/design/frontend/default/default/template/fontis/ewayau/    app/design/frontend/default/default/template/fontis/ewayau/
+app/design/frontend/default/default/layout/fontis_ewayau.xml   app/design/frontend/default/default/layout/fontis_ewayau.xml
+app/etc/modules/Fontis_EwayAu.xml                              app/etc/modules/Fontis_EwayAu.xml
+app/locale/en_US/Fontis_EwayAu.csv                             app/locale/en_US/Fontis_EwayAu.csv
