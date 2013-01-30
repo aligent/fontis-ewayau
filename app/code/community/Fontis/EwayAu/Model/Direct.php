@@ -126,7 +126,7 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         if ($result === false) {
             $e = $this->getError();
             if (isset($e['message'])) {
-                $message = Mage::helper('ewayau')->__('There has been an error processing your payment1. ') . $e['message'];
+                $message = Mage::helper('ewayau')->__('There has been an error processing your payment. ') . $e['message'];
             } else {
                 $message = Mage::helper('ewayau')->__('There has been an error processing your payment. Please try later or contact us for help.');
             }
@@ -213,9 +213,11 @@ class Fontis_EwayAu_Model_Direct extends Mage_Payment_Model_Method_Cc
         
         // Build the XML request
         $xml = new SimpleXMLElement('<ewaygateway></ewaygateway>');
- 		Mage::log('callDoDirectPayment', null, 'mylogfile.log');
- 		Mage::log($this->getAmount(), null, 'mylogfile.log');
- 		Mage::log((round($this->getAmount(), 2)*100), null, 'mylogfile.log');
+        if (Mage::getStoreConfig('payment/ewayau_direct/test_gateway')) {
+            Mage::log('callDoDirectPayment', null, 'mylogfile.log');
+            Mage::log($this->getAmount(), null, 'mylogfile.log');
+            Mage::log((round($this->getAmount(), 2) * 100), null, 'mylogfile.log');
+        }
         $xml->addChild('ewayCustomerID', $this->getCustomerId() );
         $xml->addChild('ewayTotalAmount', ($this->getAmount()*100) );
         $xml->addChild('ewayCardHoldersName', str_replace('&', '&amp;', $payment->getCcOwner() ) );
